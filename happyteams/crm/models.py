@@ -41,6 +41,7 @@ class Project(models.Model):
         help_text='What is the project\'s anticipated (or actual) start date?')
     end = models.DateField(
         help_text='What is the project\'s anticipated (or actual) end date?')
+    deliverables = models.ManyToManyField(Deliverable)
 
     def team_enjoyment(self, month=None):
         if month is None:
@@ -48,6 +49,25 @@ class Project(models.Model):
         # based on the team member assignments, what is the overall team's
         # level of enjoyment with the project?
         return 1.0
+
+    @property
+    def subaccounts(self):
+        return Account.objects.filter(project=self)
+
+    @property
+    def charges(self):
+        charges = defaultdict(dict)
+        for account in self.subaccounts:
+            charges[account] = account.direct_charges
+        return charges
+
+
+class Deliverable(models.Model):
+    name = models.CharField()
+    description = models.TextField(blank=True)
+    due_date = models.DateField(blank=True)
+    primary_assignee = models.ForeignKey('resources.Resource', blank=True, null=True)
+    supported_by = models.ManyToManyField('resources.Resource', blank=True)
 
 
 class BudgetIncrement(models.Model):
@@ -136,6 +156,7 @@ class Charge(models.Model):
     account = models.ForeignKey(Account)
     employee = models.ForeignKey('resources.Resource')
     month = models.ForeignKey(Month)
+    # TODO: deconflict the monthly discretization of time with Danny's time ranges
     planned = models.BooleanField(default=True)
     hours = models.DecimalField(max_digits=4, decimal_places=1)
 
