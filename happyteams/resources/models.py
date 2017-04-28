@@ -57,17 +57,6 @@ class SkillLevel(models.Model):
 
 
 class SkillEnjoyment(models.Model):
-    # Populate the database with these values
-    # NONE = 0
-    # LITTLE = 1
-    # ENJOY = 4
-    # FAVORITE = 9
-    # ENJOYMENT_LEVELS = (
-    #     (NONE, 'Please don\'t make me do this.'),
-    #     (LITTLE, 'Not my favorite but I\'ll do it if needed.'),
-    #     (ENJOY, 'I enjoy doing this.')
-    #     (FAVORITE, 'This is (one of) my favorite part(s) of my job.')
-    # )
     slug = models.CharField(max_length=16)
     description = models.TextField()
     value = models.PositiveIntegerField()
