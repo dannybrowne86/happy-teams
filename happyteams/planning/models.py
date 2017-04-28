@@ -19,9 +19,9 @@ class Commitment(models.Model):
     start = models.DateField()
     end = models.DateField()
     percentage = models.DecimalField(max_digits=5, decimal_places=2,
-        null=True, blank=True)
+                                     null=True, blank=True)
     hours = models.DecimalField(max_digits=7, decimal_places=2,
-        null=True, blank=True)
+                                null=True, blank=True)
 
     def clean(self):
         # ensure that the 
@@ -31,13 +31,13 @@ class Commitment(models.Model):
             assert self.start < self.project.end
             assert self.end <= self.project.end
         except:
-            raise 'Ensure the commitments dates are with the Project schedule.'
+            raise 'Ensure the commitments dates are within the Project schedule.'
 
         
         if self.percentage is None and self.hours is None:
-            raise 'You must provide either a Percentage or Hours.'
+            raise ValueError('You must provide either a Percentage or Hours.')
         if self.percentage is not None and self.hours is not None:
-            raise 'You can provide either a Percentage or Hours, but not both.'
+            raise ValueError('You can provide either a Percentage or Hours, but not both.')
 
         if self.hours:
             # add logic to ensure the number of hours does not exceed the number
