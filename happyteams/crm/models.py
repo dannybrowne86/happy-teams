@@ -107,8 +107,8 @@ class Account(models.Model):
 
     def __str__(self):
         return "{}{} (${:,.2f})".format('{}.'.format(self.parent.name) if self.parent else '',
-                                      self.name,
-                                      self.budget or 0.)
+                                        self.name,
+                                        self.budget or 0.)
 
     @property
     def subaccounts(self):

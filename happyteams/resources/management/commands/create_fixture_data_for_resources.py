@@ -4,8 +4,13 @@ from django.conf import settings
 from django.contrib.auth.models import User, Group
 from django.core.management.base import BaseCommand, CommandError
 
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
 from planning.models import Month
-from resources.models import Resource, OrganizationalUnit
+from resources.models import Resource, OrganizationalUnit, ResourceRate
 
 
 class Command(BaseCommand):
@@ -27,8 +32,10 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.SUCCESS("    - Superuser (username: '{}') already created"))
 
+        if pd is None:
+            self.style.ERROR("  - Need Pandas installed to process large excel spreadsheet")
+
         if hasattr(settings, 'FIXTURE_DATA_WORKBOOK'):
-            import pandas as pd
             rates = pd.read_excel(settings.FIXTURE_DATA_WORKBOOK,
                                   sheetname=getattr(settings, 'FIXTURE_DATA_WORKSHEET', 'Gov'), header=0)
         else:
@@ -57,6 +64,7 @@ class Command(BaseCommand):
         groups = {main_unit_name: Group(name=main_unit_name)}
         units = {main_unit_name: OrganizationalUnit(group=groups[main_unit_name])}
         users, resources, user_groups = {}, {}, {}
+        resource_index = {}
 
         eastern_tz = timezone('US/Eastern')
 
@@ -88,6 +96,8 @@ class Command(BaseCommand):
                                        date_joined=eastern_tz.localize(hire_date),
                                        is_staff=False)
 
+                resource_index[username] = i
+
                 unit_name = ''
                 parent_name = main_unit_name
                 user_groups[username] = []
@@ -116,7 +126,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("    - Completed the Creation of Organizational Units"))
 
-        # TODO: ask Danny if this convoluted way of bulk creating related models cannot be improved
+        # TODO: ask Danny if he knows of a less convoluted but equally fast way for bulk creating related models
         # Create Users and Resources
         User.objects.bulk_create(users.values())
         for user in User.objects.all():
@@ -128,8 +138,22 @@ class Command(BaseCommand):
             resource.user = users[username]
             resource.unit = units[resource.unit.group.name]
         Resource.objects.bulk_create(resources.values())
+        resources = {resource.user.username: resource for resource in Resource.objects.all()}
 
         self.stdout.write(self.style.SUCCESS("    - Completed the Creation of Resources"))
+
+        self.stdout.write(self.style.SUCCESS("    - Creating Employee Rates"))
+        employee_rates = []
+        for username, resource in resources.items():
+            for col, month in months.items():
+                rate = rates[col][resource_index[username]]
+                if isinstance(rate, str):
+                    rate = float(rate.replace('$', ''))
+                employee_rates.append(ResourceRate(employee=resource,
+                                                   month=month,
+                                                   rate=rate))
+
+        ResourceRate.objects.bulk_create(employee_rates)
 
         self.stdout.write(
             self.style.SUCCESS('  - Successfully created fixture data for HappyTeams CRM app')

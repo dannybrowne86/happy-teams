@@ -55,13 +55,14 @@ class Resource(models.Model):
         return 3.0
 
 
-class EmployeeRate(models.Model):
+class ResourceRate(models.Model):
     employee = models.ForeignKey(Resource)
     month = models.ForeignKey('planning.Month')
     rate = models.DecimalField(max_digits=6, decimal_places=2)
 
     class Meta:
         unique_together = ('employee', 'month')
+        ordering = ('employee', 'month')
 
     def __str__(self):
         return "{} {}: ${:.2f}/hr".format(self.employee, self.month, self.rate)

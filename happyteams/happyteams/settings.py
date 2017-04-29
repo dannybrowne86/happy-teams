@@ -127,12 +127,15 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 
+# Fixture Data Settings
 FIXTURE_SUPER_USERNAME = 'admin'
 FIXTURE_SUPER_PASSWORD = 'admin'
 DEFAULT_USER_PASSWORD = 'n3w_p@55w0rd_c#@ng3_i7_n0w!'
 DEFAULT_EMAIL_DOMAIN = 'gtri.gatech.edu'
 MAIN_UNIT = 'GTRI'
 
+FIXTURE_DATA_WORKBOOK = r'U:\ser_div\admin\Rates\Employee Rate Information by Organization - 2017-04-04.xlsx'
+FIXTURE_DATA_WORKSHEET = 'Gov'
 
 try:
     from .local_settings import *
