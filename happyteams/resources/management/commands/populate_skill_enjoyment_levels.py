@@ -21,5 +21,5 @@ class Command(BaseCommand):
             )
         
         self.stdout.write(
-            self.style.SUCCESS('Successfully loaded Skill Levels.')
+            self.style.SUCCESS('Successfully loaded Skill Levels')
         )

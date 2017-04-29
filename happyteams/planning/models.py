@@ -11,12 +11,13 @@ from resources.models import Resource
 
 WORKWEEK_LENGTH = 5
 WORK_HOURS_PER_DAY = 8
-MONTHS = [(i, month_name[i]) for i in range(1, 13)]
-YEARS = [(i, i) for i in range(2015, 2026)]
-CALENDAR = Calendar()
+_calendar = Calendar()
 
 
 class Month(models.Model):
+    MONTHS = [(i, month_name[i]) for i in range(1, 13)]
+    YEARS = [(i, i) for i in range(2015, 2026)]
+
     month = models.IntegerField(choices=MONTHS)
     year = models.IntegerField(choices=YEARS)
     work_hours = models.IntegerField(blank=True, null=True)
@@ -25,7 +26,7 @@ class Month(models.Model):
         unique_together = (('month', 'year'),)
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(Month, self).__init__(*args, **kwargs)
         if self.work_hours is None:
             self.work_hours = self.calculate_work_hours()
 
@@ -42,7 +43,7 @@ class Month(models.Model):
 
     def calculate_work_hours(self):
         work_hours = 0
-        for week in CALENDAR.monthdayscalendar(self.year, self.month):
+        for week in _calendar.monthdayscalendar(self.year, self.month):
             for i, day in enumerate(week):
                 if day > 0 and i < WORKWEEK_LENGTH:
                     work_hours += WORK_HOURS_PER_DAY

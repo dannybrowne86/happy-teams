@@ -12,14 +12,21 @@ class Sponsor(models.Model):
     name = models.CharField(max_length=64, unique=True)
     description = models.TextField(blank=True)
 
+    def __str__(self):
+        return "<Sponsor: {}>".format(self.name)
+
 
 class Deliverable(models.Model):
     name = models.CharField(max_length=128)
     description = models.TextField(blank=True)
-    due_date = models.DateField(blank=True)
+    due_date = models.DateField(blank=True, null=True)
     primary_assignee = models.ForeignKey('resources.Resource', blank=True, null=True,
                                          related_name='owned_deliverables')
-    supported_by = models.ManyToManyField('resources.Resource', blank=True, related_name='supported_deliverables')
+    supported_by = models.ManyToManyField('resources.Resource', blank=True,
+                                          related_name='supported_deliverables')
+
+    def __str__(self):
+        return self.name
 
 
 class Project(models.Model):
@@ -35,14 +42,14 @@ class Project(models.Model):
     description = models.TextField(blank=True)
     sponsor = models.ForeignKey(Sponsor)
     predecessor = models.ForeignKey('self', blank=True, null=True,
-        help_text='If this project is a follow-on from another project, '
-                  'select that project here.')
+                                    help_text='If this project is a follow-on from another project, ' +
+                                              'select that project here.')
     status = models.CharField(max_length=12, choices=STATUSES)
-    start = models.DateField(
-        help_text='What is the project\'s anticipated (or actual) start date?')
-    end = models.DateField(
-        help_text='What is the project\'s anticipated (or actual) end date?')
-    deliverables = models.ManyToManyField(Deliverable)
+    start = models.DateField(blank=True, null=True,
+                             help_text="What is the project's anticipated (or actual) start date?")
+    end = models.DateField(blank=True, null=True,
+                           help_text="What is the project's anticipated (or actual) end date?")
+    deliverables = models.ManyToManyField(Deliverable, blank=True)
 
     def team_enjoyment(self, month=None):
         if month is None:
@@ -62,6 +69,20 @@ class Project(models.Model):
             charges[account] = account.direct_charges
         return charges
 
+    def __str__(self):
+        return self.name
+
+
+class Task(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+    project = models.ForeignKey(Project, blank=True, null=True)
+
+    def __init__(self, *args, **kwargs):
+        super(Task, self).__init__(*args, **kwargs)
+        if self.project is None:
+            self.project = self.parent.project
+
 
 class BudgetIncrement(models.Model):
     start = models.DateField(
@@ -72,15 +93,22 @@ class BudgetIncrement(models.Model):
     project = models.ForeignKey(Project)
 
 
-
 class Account(models.Model):
-    project = models.ForeignKey(Project)
+    project = models.ForeignKey(Project, blank=True, null=True)
     name = models.CharField(max_length=16, primary_key=True)
-    parent = models.ForeignKey('Account', blank=True, null=True)
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
     budget = models.DecimalField(max_digits=12, decimal_places=2)
 
+    def __init__(self, *args, **kwargs):
+        super(Account, self).__init__(*args, **kwargs)
+
+        if self.project is None and self.parent:
+            self.project = self.parent.project
+
     def __str__(self):
-        return "{} (${:,.2f})".format(self.name, self.budget)
+        return "{}{} (${:,.2f})".format('{}.'.format(self.parent.name) if self.parent else '',
+                                      self.name,
+                                      self.budget or 0.)
 
     @property
     def subaccounts(self):
@@ -133,5 +161,6 @@ class Charge(models.Model):
     @property
     def cost(self):
         from resources.models import EmployeeRate
+
         return self.hours * EmployeeRate.objects.get(employee=self.employee,
                                                      month=self.month).rate

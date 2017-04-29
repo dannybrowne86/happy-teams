@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -126,3 +129,12 @@ STATIC_URL = '/static/'
 
 FIXTURE_SUPER_USERNAME = 'admin'
 FIXTURE_SUPER_PASSWORD = 'admin'
+DEFAULT_USER_PASSWORD = 'n3w_p@55w0rd_c#@ng3_i7_n0w!'
+DEFAULT_EMAIL_DOMAIN = 'gtri.gatech.edu'
+MAIN_UNIT = 'GTRI'
+
+
+try:
+    from .local_settings import *
+except ImportError:
+    logger.debug("Could not import local settings from 'happyteams/local_settings.py'")
