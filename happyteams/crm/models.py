@@ -40,11 +40,12 @@ class Project(models.Model):
 
     name = models.CharField(max_length=64, unique=True)
     description = models.TextField(blank=True)
+    contract_number = models.CharField(max_length=32, blank=True)
     sponsor = models.ForeignKey(Sponsor)
     predecessor = models.ForeignKey('self', blank=True, null=True,
                                     help_text='If this project is a follow-on from another project, ' +
                                               'select that project here.')
-    status = models.CharField(max_length=12, choices=STATUSES)
+    status = models.CharField(max_length=12, choices=STATUSES, default='opportunity')
     start = models.DateField(blank=True, null=True,
                              help_text="What is the project's anticipated (or actual) start date?")
     end = models.DateField(blank=True, null=True,

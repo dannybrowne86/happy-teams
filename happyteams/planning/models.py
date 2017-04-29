@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from datetime import datetime
+from datetime import datetime, date
 from django.db import models
 from calendar import Calendar, month_name, monthrange
 

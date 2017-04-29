@@ -18,7 +18,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if settings.DEBUG:
-            self.stdout.write(self.style.SUCCESS("Creating Fixture Data for HappyTeams CRM App"))
+            self.stdout.write(self.style.SUCCESS("Creating Fixture Data for HappyTeams Resources App"))
         else:
             self.stdout.write(self.style.ERROR("Must be in DEBUG mode to create fixture data"))
             return
@@ -48,15 +48,13 @@ class Command(BaseCommand):
         months = {}
         for col in rates.columns:
             if isinstance(col, parser.datetime.datetime):
-                months[col] = Month(id=len(months) + 1, month=col.month, year=col.year)
+                months[col] = Month.objects.get(month=col.month, year=col.year)
             else:
                 try:
                     date = parser.parse(col)
-                    months[col] = Month(id=len(months) + 1, month=date.month, year=date.year)
+                    months[col] = Month.objects.get(month=date.month, year=date.year)
                 except ValueError:
                     pass
-
-        Month.objects.bulk_create(months.values())
 
         self.stdout.write(self.style.SUCCESS("    - Creating Resources and Organizational Units"))
 
@@ -156,5 +154,5 @@ class Command(BaseCommand):
         ResourceRate.objects.bulk_create(employee_rates)
 
         self.stdout.write(
-            self.style.SUCCESS('  - Successfully created fixture data for HappyTeams CRM app')
+            self.style.SUCCESS('  - Successfully created fixture data for HappyTeams Resources app')
         )
