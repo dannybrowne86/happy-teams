@@ -43,7 +43,7 @@ class Resource(models.Model):
 
 class EmployeeRate(models.Model):
     employee = models.ForeignKey(Resource)
-    month = models.ForeignKey('crm.Month')
+    month = models.ForeignKey('planning.Month')
     rate = models.DecimalField(max_digits=6, decimal_places=2)
 
     class Meta:

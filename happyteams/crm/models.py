@@ -3,22 +3,23 @@ from __future__ import unicode_literals
 
 from django.db import models
 
-from calendar import Calendar, month_name, monthrange
 from collections import defaultdict
 from datetime import date, datetime
-
-
-WORKWEEK_LENGTH = 5
-WORK_HOURS_PER_DAY = 8
-MONTHS = [(i, month_name[i]) for i in range(1, 13)]
-YEARS = [(i, i) for i in range(2015, 2026)]
-CALENDAR = Calendar()
 
 
 # Create your models here.
 class Sponsor(models.Model):
     name = models.CharField(max_length=64, unique=True)
     description = models.TextField(blank=True)
+
+
+class Deliverable(models.Model):
+    name = models.CharField(max_length=128)
+    description = models.TextField(blank=True)
+    due_date = models.DateField(blank=True)
+    primary_assignee = models.ForeignKey('resources.Resource', blank=True, null=True,
+                                         related_name='owned_deliverables')
+    supported_by = models.ManyToManyField('resources.Resource', blank=True, related_name='supported_deliverables')
 
 
 class Project(models.Model):
@@ -62,14 +63,6 @@ class Project(models.Model):
         return charges
 
 
-class Deliverable(models.Model):
-    name = models.CharField()
-    description = models.TextField(blank=True)
-    due_date = models.DateField(blank=True)
-    primary_assignee = models.ForeignKey('resources.Resource', blank=True, null=True)
-    supported_by = models.ManyToManyField('resources.Resource', blank=True)
-
-
 class BudgetIncrement(models.Model):
     start = models.DateField(
         help_text='What is the project\'s anticipated (or actual) start date?')
@@ -78,38 +71,6 @@ class BudgetIncrement(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     project = models.ForeignKey(Project)
 
-
-class Month(models.Model):
-    month = models.IntegerField(choices=MONTHS)
-    year = models.IntegerField(choices=YEARS)
-    work_hours = models.IntegerField(blank=True, null=True)
-
-    class Meta:
-        unique_together = (('month', 'year'),)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.work_hours is None:
-            self.work_hours = self.calculate_work_hours()
-
-    def __str__(self):
-        return "{:02d}/{:4d}".format(self.month, self.year)
-
-    @property
-    def starts(self):
-        return datetime(self.year, self.month, 1)
-
-    @property
-    def ends(self):
-        return datetime(self.year, self.month, monthrange(self.year, self.month)[1], 23, 59, 59)
-
-    def calculate_work_hours(self):
-        work_hours = 0
-        for week in CALENDAR.monthdayscalendar(self.year, self.month):
-            for i, day in enumerate(week):
-                if day > 0 and i < WORKWEEK_LENGTH:
-                    work_hours += WORK_HOURS_PER_DAY
-        return work_hours
 
 
 class Account(models.Model):
@@ -155,7 +116,7 @@ class Account(models.Model):
 class Charge(models.Model):
     account = models.ForeignKey(Account)
     employee = models.ForeignKey('resources.Resource')
-    month = models.ForeignKey(Month)
+    month = models.ForeignKey('planning.Month')
     # TODO: deconflict the monthly discretization of time with Danny's time ranges
     planned = models.BooleanField(default=True)
     hours = models.DecimalField(max_digits=4, decimal_places=1)

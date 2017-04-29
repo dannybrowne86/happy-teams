@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 from resources.models import SkillEnjoyment
 
+
 class Command(BaseCommand):
     help = ('Populates the database with a suggested set of '
             'Skill Enjoyment Levels.')
