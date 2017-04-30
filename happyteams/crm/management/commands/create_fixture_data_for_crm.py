@@ -1,9 +1,10 @@
+from datetime import date
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from random import choice
 
-from planning.models import Month
+from planning.models import ends
 from crm.models import BudgetIncrement, Project, Sponsor
 
 
@@ -61,17 +62,17 @@ class Command(BaseCommand):
 
         for name, data in projects.items():
             month, year = map(int, data.pop('start').split('/'))
-            start = Month.objects.get(month=month, year=year)
+            start = date(year=year, month=month, day=1)
             month, year = map(int, data.pop('end').split('/'))
-            end = Month.objects.get(month=month, year=year)
+            end = ends(year=year, month=month)
             budget = data.pop('budget', 0.0)
             project = Project.objects.create(name=name,
-                                             start=start.starts,
-                                             end=end.ends,
+                                             start=start,
+                                             end=end,
                                              sponsor=choice(sponsors),
                                              **data)
             BudgetIncrement.objects.create(project=project, amount=budget,
-                                           start=start.starts, end=end.ends)
+                                           start=start, end=end)
 
         self.stdout.write(
             self.style.SUCCESS('  - Successfully created fixture data for HappyTeams CRM app')

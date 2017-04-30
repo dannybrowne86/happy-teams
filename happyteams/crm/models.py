@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db import models
-
 from collections import defaultdict
 from datetime import date, datetime
+from django.db import models
 
 
-# Create your models here.
 class Sponsor(models.Model):
     name = models.CharField(max_length=64, unique=True)
     description = models.TextField(blank=True)
@@ -145,19 +143,17 @@ class Account(models.Model):
 class Charge(models.Model):
     account = models.ForeignKey(Account)
     employee = models.ForeignKey('resources.Resource')
-    month = models.ForeignKey('planning.Month')
+    start = models.DateField(help_text="Start date for the charge")
     # TODO: deconflict the monthly discretization of time with Danny's time ranges
     planned = models.BooleanField(default=True)
     hours = models.DecimalField(max_digits=4, decimal_places=1)
 
-    class Meta:
-        unique_together = (('account', 'employee', 'month', 'planned'),)
-
     def __str__(self):
-        return "{:.1f} hrs for {} on {} {}".format(self.hours,
-                                                   self.employee.name,
-                                                   self.month,
-                                                   self.account.name)
+        return "{:.1f} hrs for {} on {:2d}/{:4d} {}".format(self.hours,
+                                                            self.employee.name,
+                                                            self.start.month,
+                                                            self.start.date,
+                                                            self.account.name)
 
     @property
     def cost(self):

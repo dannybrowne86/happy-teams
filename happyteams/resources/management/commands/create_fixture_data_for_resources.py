@@ -1,15 +1,16 @@
+from datetime import date, datetime
 from dateutil import parser
-from pytz import timezone
 from django.conf import settings
 from django.contrib.auth.models import User, Group
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
+from pytz import timezone
 
 try:
     import pandas as pd
 except ImportError:
     pd = None
 
-from planning.models import Month
+
 from resources.models import Resource, OrganizationalUnit, ResourceRate
 
 
@@ -43,19 +44,6 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(self.style.SUCCESS("  Creating Fixture Data:"))
-
-        self.stdout.write(self.style.SUCCESS("    - Creating Months"))
-        months = {}
-        for col in rates.columns:
-            if isinstance(col, parser.datetime.datetime):
-                months[col] = Month.objects.get(month=col.month, year=col.year)
-            else:
-                try:
-                    date = parser.parse(col)
-                    months[col] = Month.objects.get(month=date.month, year=date.year)
-                except ValueError:
-                    pass
-
         self.stdout.write(self.style.SUCCESS("    - Creating Resources and Organizational Units"))
 
         main_unit_name = getattr(settings, 'MAIN_UNIT', 'Organization')
@@ -141,14 +129,25 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("    - Completed the Creation of Resources"))
 
         self.stdout.write(self.style.SUCCESS("    - Creating Employee Rates"))
+
+        months = {}
+        for col in rates.columns:
+            try:
+                month = col
+                if not isinstance(month, datetime):
+                    month = parser.parse(month)
+                months[col] = (month.month, month.year)
+            except ValueError:
+                pass
+
         employee_rates = []
         for username, resource in resources.items():
-            for col, month in months.items():
+            for col, (month, year) in months.items():
                 rate = rates[col][resource_index[username]]
                 if isinstance(rate, str):
                     rate = float(rate.replace('$', ''))
                 employee_rates.append(ResourceRate(employee=resource,
-                                                   month=month,
+                                                   start=date(year=year, month=month, day=1),
                                                    rate=rate))
 
         ResourceRate.objects.bulk_create(employee_rates)

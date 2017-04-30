@@ -2,8 +2,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 
-from planning.models import Month
-
 
 class Command(BaseCommand):
     help = 'Create fixture data for CRM app.'
@@ -25,13 +23,6 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("    - Superuser (username: '{}') already created"))
 
         self.stdout.write(self.style.SUCCESS("  Creating Fixture Data:"))
-
-        self.stdout.write(self.style.SUCCESS("    - Creating Months"))
-        months = []
-        for year in Month.YEARS:
-            for month in Month.MONTHS:
-                months.append(Month(id=len(months) + 1, month=month[0], year=year[0]))
-        Month.objects.bulk_create(months)
 
         self.stdout.write(
             self.style.SUCCESS('  - Successfully created fixture data for HappyTeams Planning app')
