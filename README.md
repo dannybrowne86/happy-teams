@@ -4,7 +4,7 @@ The goal of this project is to provide a basic CRM tool, include resource/projec
 
 ## Install
 1. Clone this repo.
-2. Setup a virtualenv and install the pip requirements.  You can remvoe the ipython requirement, I just find that interactive interface way preferable since much of the functionality currently exists just at the shell level.
+2. Setup a virtualenv and install the pip requirements.  You can remove the ipython requirement, I just find that interactive interface way preferable since much of the functionality currently exists just at the shell level.
 3. I suggest you run the populate_skill_enjoyment_levels command to provide some fixture data for the SkillEnjoyment model.  This is just a recommended starting point.
 
 ## Usage
