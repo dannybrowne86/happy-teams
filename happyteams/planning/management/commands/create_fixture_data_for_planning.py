@@ -24,6 +24,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("  Creating Fixture Data:"))
 
+        # TODO: add fixture data here (when we have a better model for commitments)
+
         self.stdout.write(
             self.style.SUCCESS('  - Successfully created fixture data for HappyTeams Planning app')
         )

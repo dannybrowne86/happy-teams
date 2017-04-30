@@ -1,9 +1,30 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from calendar import Calendar, monthrange
 from collections import defaultdict
 from datetime import date, datetime
 from django.db import models
+
+
+_calendar = Calendar()
+
+
+def month_starts(month, year):
+    return datetime(year, month, 1)
+
+
+def month_ends(month, year):
+    return datetime(year, month, monthrange(year, month)[1], 23, 59, 59, 99999)
+
+
+def calculate_work_hours(month, year, work_hrs_per_day=8, workweek_starts=0, workweek_ends=5):
+    work_hours = 0
+    for week in _calendar.monthdayscalendar(year, month):
+        for i, day in enumerate(week):
+            if day > workweek_starts and i < workweek_ends:
+                work_hours += work_hrs_per_day
+    return work_hours
 
 
 class Sponsor(models.Model):
@@ -48,7 +69,7 @@ class Project(models.Model):
                              help_text="What is the project's anticipated (or actual) start date?")
     end = models.DateField(blank=True, null=True,
                            help_text="What is the project's anticipated (or actual) end date?")
-    deliverables = models.ManyToManyField(Deliverable, blank=True)
+    deliverables = models.ManyToManyField(Deliverable, blank=True, related_name='projects')
 
     def team_enjoyment(self, month=None):
         if month is None:
@@ -93,7 +114,7 @@ class BudgetIncrement(models.Model):
 
 
 class Account(models.Model):
-    project = models.ForeignKey(Project, blank=True, null=True)
+    project = models.ForeignKey(Project, blank=True, null=True, related_name='accounts')
     name = models.CharField(max_length=16, primary_key=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
     budget = models.DecimalField(max_digits=12, decimal_places=2)
@@ -116,7 +137,7 @@ class Account(models.Model):
     @property
     def all_subaccounts(self):
         subaccounts = []
-        for account in self.subaccounts:
+        for account in self.subaccounts.all():
             subaccounts += [account] + account.all_subaccounts
         return subaccounts
 
@@ -141,12 +162,16 @@ class Account(models.Model):
 
 
 class Charge(models.Model):
-    account = models.ForeignKey(Account)
-    employee = models.ForeignKey('resources.Resource')
+    account = models.ForeignKey(Account, related_name='charges')
+    employee = models.ForeignKey('resources.Resource', related_name='charges')
     start = models.DateField(help_text="Start date for the charge")
-    # TODO: deconflict the monthly discretization of time with Danny's time ranges
-    planned = models.BooleanField(default=True)
+    end = models.DateField(blank=True, null=True, help_text="End date for the charge")
     hours = models.DecimalField(max_digits=4, decimal_places=1)
+
+    def __init__(self, *args, **kwargs):
+        super(Charge, self).__init__(*args, **kwargs)
+        if self.end is None:
+            self.end = month_ends(month=self.start.month, year=self.start.year)
 
     def __str__(self):
         return "{:.1f} hrs for {} on {:2d}/{:4d} {}".format(self.hours,
@@ -157,7 +182,4 @@ class Charge(models.Model):
 
     @property
     def cost(self):
-        from resources.models import EmployeeRate
-
-        return self.hours * EmployeeRate.objects.get(employee=self.employee,
-                                                     month=self.month).rate
+        return self.hours * self.employee.rates.filter(start__range=self.start)

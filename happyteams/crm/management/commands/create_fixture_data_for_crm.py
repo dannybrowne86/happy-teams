@@ -1,11 +1,9 @@
-from datetime import date
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from random import choice
 
-from planning.models import ends
-from crm.models import BudgetIncrement, Project, Sponsor
+from crm.models import BudgetIncrement, Project, Sponsor, month_starts, month_ends
 
 
 class Command(BaseCommand):
@@ -62,9 +60,9 @@ class Command(BaseCommand):
 
         for name, data in projects.items():
             month, year = map(int, data.pop('start').split('/'))
-            start = date(year=year, month=month, day=1)
+            start = month_starts(year=year, month=month)
             month, year = map(int, data.pop('end').split('/'))
-            end = ends(year=year, month=month)
+            end = month_ends(year=year, month=month)
             budget = data.pop('budget', 0.0)
             project = Project.objects.create(name=name,
                                              start=start,

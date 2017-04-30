@@ -9,6 +9,7 @@ from django.contrib.auth.models import User, Group
 class OrganizationalUnit(models.Model):
     group = models.OneToOneField(Group)
     name = models.CharField(max_length=64, blank=True)
+    # TODO: investigate the value of treebeard or django-mptt to have better hierarchical models
     # parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
     parent = models.ForeignKey('self', null=True, blank=True)
     primary_manager = models.ForeignKey('Resource', null=True, blank=True,
@@ -17,6 +18,7 @@ class OrganizationalUnit(models.Model):
                                           related_name='supports')
 
     def __init__(self, *args, **kwargs):
+        # TODO: figure out a way to not ahave to replicate name, maybe use django-polymorphic?
         super(OrganizationalUnit, self).__init__(*args, **kwargs)
         if not self.name:
             self.name = self.group.name
@@ -56,7 +58,7 @@ class Resource(models.Model):
 
 
 class ResourceRate(models.Model):
-    employee = models.ForeignKey(Resource)
+    employee = models.ForeignKey(Resource, related_name='rates')
     start = models.DateField(help_text="The date the rate starts, future rates will supersede it")
     rate = models.DecimalField(max_digits=6, decimal_places=2)
 
@@ -79,7 +81,8 @@ class Skill(models.Model):
 
 
 class SkillLevel(models.Model):
-    skill = models.ForeignKey(Skill, on_delete=models.PROTECT)
+    skill = models.ForeignKey(Skill, on_delete=models.PROTECT,
+                              related_name='levels')
     rank = models.PositiveIntegerField()
     description = models.TextField()
 
@@ -113,9 +116,8 @@ class ResourceSkill(models.Model):
 
     """
 
-    resource = models.ForeignKey(Resource, on_delete=models.CASCADE)
-    skill = models.ForeignKey(Skill, on_delete=models.PROTECT)
-    # can we limit the options here based on the ones
+    resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name='skills')
+    skill = models.ForeignKey(Skill, on_delete=models.PROTECT, related_name='resources')
     skill_level = models.ForeignKey(SkillLevel, null=True, blank=True,
                                     on_delete=models.SET_NULL,
                                     help_text='How would you rate your abilities in this area?')
