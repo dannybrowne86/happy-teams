@@ -35,6 +35,7 @@ class Command(BaseCommand):
 
         if pd is None:
             self.style.ERROR("  - Need Pandas installed to process large excel spreadsheet")
+            return
 
         if hasattr(settings, 'FIXTURE_DATA_WORKBOOK'):
             rates = pd.read_excel(settings.FIXTURE_DATA_WORKBOOK,

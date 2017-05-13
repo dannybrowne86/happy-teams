@@ -1,30 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from calendar import Calendar, monthrange
 from collections import defaultdict
 from datetime import date, datetime
 from django.db import models
+from enum import Enum
 
-
-_calendar = Calendar()
-
-
-def month_starts(month, year):
-    return datetime(year, month, 1)
-
-
-def month_ends(month, year):
-    return datetime(year, month, monthrange(year, month)[1], 23, 59, 59, 99999)
-
-
-def calculate_work_hours(month, year, work_hrs_per_day=8, workweek_starts=0, workweek_ends=5):
-    work_hours = 0
-    for week in _calendar.monthdayscalendar(year, month):
-        for i, day in enumerate(week):
-            if day > workweek_starts and i < workweek_ends:
-                work_hours += work_hrs_per_day
-    return work_hours
+from .util import get_month_start_dates, get_last_day_of_the_month
 
 
 class Sponsor(models.Model):
@@ -33,6 +15,19 @@ class Sponsor(models.Model):
 
     def __str__(self):
         return "<Sponsor: {}>".format(self.name)
+
+
+class ProjectStatus(Enum):
+    OPPORTUNITY = (0, 0.15)
+    PENDING = (1, 0.90)
+    ACTIVE = (2, 1.00)
+    CLOSE_OUT = (3, 1.00)
+    ARCHIVED = (4, 1.00)
+
+    @property
+    def choices(self):
+        # TODO: make this return Django Choices
+        return None
 
 
 class Deliverable(models.Model):
@@ -105,12 +100,14 @@ class Task(models.Model):
 
 
 class BudgetIncrement(models.Model):
+    project = models.ForeignKey(Project, related_name='budget_increments')
+    task = models.ForeignKey(Task, blank=True, null=True, related_name='budget_increments')
     start = models.DateField(
-        help_text='What is the project\'s anticipated (or actual) start date?')
+        help_text="What is the project's anticipated (or actual) start date?")
     end = models.DateField(
-        help_text='What is the PoP of the funding? (expiration)')
+        help_text="What is the PoP of the funding? (expiration)")
     amount = models.DecimalField(max_digits=12, decimal_places=2)
-    project = models.ForeignKey(Project)
+    comments = models.TextField(blank=True)
 
 
 class Account(models.Model):
@@ -171,7 +168,7 @@ class Charge(models.Model):
     def __init__(self, *args, **kwargs):
         super(Charge, self).__init__(*args, **kwargs)
         if self.end is None:
-            self.end = month_ends(month=self.start.month, year=self.start.year)
+            self.end = get_last_day_of_the_month(self.start)
 
     def __str__(self):
         return "{:.1f} hrs for {} on {:2d}/{:4d} {}".format(self.hours,
@@ -181,5 +178,14 @@ class Charge(models.Model):
                                                             self.account.name)
 
     @property
+    def months(self):
+        """Generates the start date for the months in the commitment period."""
+        assert self.start < self.end, "Must end after start (start: {}, end: {})".format(self.start, self.end)
+        for month in get_month_start_dates(start=self.start, end=self.end):
+            yield month
+
+    @property
     def cost(self):
-        return self.hours * self.employee.rates.filter(start__range=self.start)
+        if self.end.month > self.start.month:
+            raise NotImplementedError("Need to calculate multi-month charges")
+        return self.hours * self.employee.rates.filter(start__lte=self.start).latest('start')

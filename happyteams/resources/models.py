@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from datetime import date
+from collections import defaultdict
 from django.db import models
 from django.contrib.auth.models import User, Group
+from crm.util import get_last_day_of_the_month, calculate_work_hours
 
 
 class OrganizationalUnit(models.Model):
@@ -18,7 +19,7 @@ class OrganizationalUnit(models.Model):
                                           related_name='supports')
 
     def __init__(self, *args, **kwargs):
-        # TODO: figure out a way to not ahave to replicate name, maybe use django-polymorphic?
+        # TODO: figure out a way to not have to replicate name, maybe use django-polymorphic?
         super(OrganizationalUnit, self).__init__(*args, **kwargs)
         if not self.name:
             self.name = self.group.name
@@ -32,9 +33,9 @@ class OrganizationalUnit(models.Model):
 
 class Resource(models.Model):
     user = models.OneToOneField(User)
-    middle_initial = models.CharField(max_length=1)
-    employee_number = models.IntegerField(primary_key=True)
-    title = models.CharField(max_length=16)
+    middle_initial = models.CharField(max_length=1, blank=True)
+    employee_number = models.CharField(max_length=32, blank=True)
+    title = models.CharField(max_length=32, blank=True)
     unit = models.ForeignKey(OrganizationalUnit, blank=True, null=True,
                              related_name='members')
 
@@ -45,16 +46,38 @@ class Resource(models.Model):
                                      self.user.last_name)
         return self.user.username
 
-    def coverage(self, month=None):
-        # calculate the coverage for the employee for the given month
-        month = month or date.today()
-        return 1.0
+    @property
+    def committed_hours(self):
+        total_hours = defaultdict(float)
+        for commitment in self.commitments:
+            for month, hours in commitment.hours_per_month.items():
+                total_hours[month] += hours
+        return total_hours
 
-    def enjoyment(self, month=None):
+    def committed_hours_in_period(self, start, end=None):
+        # Calculate the coverage for the employee for the given month
+        if end is None:
+            end = get_last_day_of_the_month(start)
+
+        total_hours = defaultdict(float)
+        for commitment in self.commitments.filter(start__lte=start, end__gte=end):
+            for month, hours in commitment.hours_in_period(start=start, end=end).items():
+                total_hours[month] += hours
+        return total_hours
+
+    @property
+    def coverage(self):
+        return {month: (hours / calculate_work_hours(year=month.year, month=month.month))
+                for month, hours in self.committed_hours.items()}
+
+    def coverage_in_period(self, start, end=None):
+        return {month: (hours / calculate_work_hours(year=month.year, month=month.month))
+                for month, hours in self.committed_hours_in_period(start=start, end=end).items()}
+
+    def enjoyment(self, year=None, month=None):
         # based on the resources assignments for the given month, what is
         # their level of enjoyment in their work?
-        month = month or date.today()
-        return 3.0
+        raise NotImplementedError()
 
 
 class ResourceRate(models.Model):
