@@ -74,36 +74,35 @@ class Commitment(models.Model):
             end = get_last_day_of_the_month(start)
 
         if end < self.start or start > self.end:
-            return 0.
+            return {}
 
         end = min(end, self.end)
         start_day = self.start.day if self.start > start else start.day
 
         # If only asking for one month, return a single number
         if start.year == end.year and start.month == end.month:
+            month = get_first_day_of_the_month(start)
             end_day = self.end.day if self.end < end else end.day
             if use_percentage:
-                return calculate_work_hours(year=start.year,
-                                            month=start.month,
-                                            start_day=start_day,
-                                            end_day=end_day) * self.percentage
+                return {month: calculate_work_hours(year=start.year,
+                                                    month=start.month,
+                                                    start_day=start_day,
+                                                    end_day=end_day) * 0.01 * float(self.percentage)}
             else:
-                return self.hours
+                return {month: self.hours}
 
         result = {}
         for month in get_month_start_dates(start=start, end=end):
             hours = calculate_work_hours(year=month.year,
                                          month=month.month,
                                          start_day=month.day,
-                                         end_day=self.end.day if self.end < get_last_day_of_the_month(month) else None)
+                                         end_day=self.end.day if self.end < get_last_day_of_the_month(month) else 31)
             if month.day > 1:
                 month = get_first_day_of_the_month(month)
             if use_percentage:
-                result[month] = hours * self.percentage
+                result[month] = hours * 0.01 * float(self.percentage)
             else:
                 result[month] = self.hours
-                if self.hours > hours:
-                    logger.warn("Commitment {} exceeds hours available in the month!".format(self))
         return result
 
     def save(self, *args, **kwargs):

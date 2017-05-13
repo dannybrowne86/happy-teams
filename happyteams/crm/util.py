@@ -47,8 +47,13 @@ def get_last_day_of_the_month(*args, **kwargs):
 
 def calculate_work_hours(year, month, start_day=1, end_day=31,
                          work_hrs_per_day=8, workweek_starts=0, workweek_ends=4):
-    work_hours = 0
+
+    start_day = getattr(start_day, 'day', start_day)
+    end_day = getattr(end_day, 'day', end_day)
+
     end_day = min(end_day, monthrange(year, month)[1])
+
+    work_hours = 0
     for week in _calendar.monthdayscalendar(year, month):
         for i, day in enumerate(week):
             if all((day >= start_day,

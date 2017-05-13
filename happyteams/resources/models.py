@@ -49,9 +49,9 @@ class Resource(models.Model):
     @property
     def committed_hours(self):
         total_hours = defaultdict(float)
-        for commitment in self.commitments:
+        for commitment in self.commitments.all():
             for month, hours in commitment.hours_per_month.items():
-                total_hours[month] += hours
+                total_hours[month] += float(hours)
         return total_hours
 
     def committed_hours_in_period(self, start, end=None):
@@ -60,9 +60,9 @@ class Resource(models.Model):
             end = get_last_day_of_the_month(start)
 
         total_hours = defaultdict(float)
-        for commitment in self.commitments.filter(start__lte=start, end__gte=end):
+        for commitment in self.commitments.filter(models.Q(start__lte=start) | models.Q(end__gte=end)):
             for month, hours in commitment.hours_in_period(start=start, end=end).items():
-                total_hours[month] += hours
+                total_hours[month] += float(hours)
         return total_hours
 
     @property
