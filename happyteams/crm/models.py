@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 from collections import defaultdict
 from datetime import date, datetime
 from django.db import models
-from enum import Enum
 
 from .util import get_month_start_dates, get_last_day_of_the_month
 
@@ -15,19 +14,6 @@ class Sponsor(models.Model):
 
     def __str__(self):
         return "<Sponsor: {}>".format(self.name)
-
-
-class ProjectStatus(Enum):
-    OPPORTUNITY = (0, 0.15)
-    PENDING = (1, 0.90)
-    ACTIVE = (2, 1.00)
-    CLOSE_OUT = (3, 1.00)
-    ARCHIVED = (4, 1.00)
-
-    @property
-    def choices(self):
-        # TODO: make this return Django Choices
-        return None
 
 
 class Deliverable(models.Model):
