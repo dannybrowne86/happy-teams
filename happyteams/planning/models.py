@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils.encoding import python_2_unicode_compatible
 from logging import getLogger
 
 from crm.models import Project, Account
@@ -12,6 +13,7 @@ from resources.models import Resource
 logger = getLogger(__name__)
 
 
+@python_2_unicode_compatible
 class Commitment(models.Model):
     """This model captures the commitments for a specific resource on a
     specific project.  The model is designed to allow for extended commitments

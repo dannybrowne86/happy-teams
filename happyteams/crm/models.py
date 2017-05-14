@@ -4,10 +4,12 @@ from __future__ import unicode_literals
 from collections import defaultdict
 from datetime import date, datetime
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 
 from .util import get_month_start_dates, get_last_day_of_the_month
 
 
+@python_2_unicode_compatible
 class Sponsor(models.Model):
     name = models.CharField(max_length=64, unique=True)
     description = models.TextField(blank=True)
@@ -16,6 +18,7 @@ class Sponsor(models.Model):
         return "<Sponsor: {}>".format(self.name)
 
 
+@python_2_unicode_compatible
 class Deliverable(models.Model):
     name = models.CharField(max_length=128)
     description = models.TextField(blank=True)
@@ -29,6 +32,7 @@ class Deliverable(models.Model):
         return self.name
 
 
+@python_2_unicode_compatible
 class Project(models.Model):
     STATUSES = (
         ('opportunity', 'Opportunity'),  # low probability project
@@ -74,6 +78,7 @@ class Project(models.Model):
         return self.name
 
 
+@python_2_unicode_compatible
 class Task(models.Model):
     name = models.CharField(max_length=50, unique=True)
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
@@ -85,6 +90,7 @@ class Task(models.Model):
             self.project = self.parent.project
 
 
+@python_2_unicode_compatible
 class BudgetIncrement(models.Model):
     project = models.ForeignKey(Project, related_name='budget_increments')
     task = models.ForeignKey(Task, blank=True, null=True, related_name='budget_increments')
@@ -96,6 +102,7 @@ class BudgetIncrement(models.Model):
     comments = models.TextField(blank=True)
 
 
+@python_2_unicode_compatible
 class Account(models.Model):
     project = models.ForeignKey(Project, blank=True, null=True, related_name='accounts')
     name = models.CharField(max_length=16, primary_key=True)
@@ -144,6 +151,7 @@ class Account(models.Model):
         return charges
 
 
+@python_2_unicode_compatible
 class Charge(models.Model):
     account = models.ForeignKey(Account, related_name='charges')
     employee = models.ForeignKey('resources.Resource', related_name='charges')

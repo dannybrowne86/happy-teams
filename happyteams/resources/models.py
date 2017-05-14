@@ -4,9 +4,11 @@ from __future__ import unicode_literals
 from collections import defaultdict
 from django.db import models
 from django.contrib.auth.models import User, Group
+from django.utils.encoding import python_2_unicode_compatible
 from crm.util import get_last_day_of_the_month, calculate_work_hours
 
 
+@python_2_unicode_compatible
 class OrganizationalUnit(models.Model):
     group = models.OneToOneField(Group)
     name = models.CharField(max_length=64, blank=True)
@@ -31,6 +33,7 @@ class OrganizationalUnit(models.Model):
         ordering = ['name']
 
 
+@python_2_unicode_compatible
 class Resource(models.Model):
     user = models.OneToOneField(User)
     middle_initial = models.CharField(max_length=1, blank=True)
@@ -80,6 +83,7 @@ class Resource(models.Model):
         raise NotImplementedError()
 
 
+@python_2_unicode_compatible
 class ResourceRate(models.Model):
     employee = models.ForeignKey(Resource, related_name='rates')
     start = models.DateField(help_text="The date the rate starts, future rates will supersede it")
@@ -92,17 +96,16 @@ class ResourceRate(models.Model):
         return "{} {:%b-%Y}: ${:.2f}/hr".format(self.employee, self.start, self.rate)
 
 
+@python_2_unicode_compatible
 class Skill(models.Model):
     name = models.CharField(max_length=64, unique=True)
     description = models.TextField(blank=True)
-
-    def __unicode__(self):
-        return self.name
 
     def __str__(self):
         return self.name
 
 
+@python_2_unicode_compatible
 class SkillLevel(models.Model):
     skill = models.ForeignKey(Skill, on_delete=models.PROTECT,
                               related_name='levels')
@@ -124,6 +127,7 @@ class SkillLevel(models.Model):
         return "{}={}".format(self.skill.name, self.rank)
 
 
+@python_2_unicode_compatible
 class SkillEnjoyment(models.Model):
     slug = models.CharField(max_length=16)
     description = models.TextField()
@@ -133,6 +137,7 @@ class SkillEnjoyment(models.Model):
         return self.slug
 
 
+@python_2_unicode_compatible
 class ResourceSkill(models.Model):
     """
     This model captures how well a resource can execute a skill as well as their enjoyment level.
