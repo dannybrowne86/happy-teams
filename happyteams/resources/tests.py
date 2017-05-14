@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import unicode_literals, division
 
 from datetime import date
 from django.contrib.auth.models import User
@@ -52,6 +52,12 @@ class TestResource(TestCase):
     def test_coverage(self):
         coverage = self.resource_2.coverage
         self.assertAlmostEquals(coverage[date(2018, 9, 1)], 0.25)
+
+        coverage = self.resource_2.coverage_in_period(start=date(2017, 7, 1), end=date(2017, 9, 5))
+        self.assertAlmostEquals(coverage[date(2017, 7, 1)], 0.5 + (40 / (21 * 8)))
+
+        coverage = self.resource_2.coverage_in_period(start=date(2017, 7, 1), end=date(2017, 9, 5))
+        self.assertAlmostEquals(coverage[date(2017, 8, 1)], 0.5 + 40 / (23 * 8))
 
     def test_commitments(self):
         hours = self.resource_1.committed_hours
