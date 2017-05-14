@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import division, unicode_literals
 
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -7,7 +7,8 @@ from django.utils.encoding import python_2_unicode_compatible
 from logging import getLogger
 
 from crm.models import Project, Account
-from crm.util import calculate_work_hours, get_first_day_of_the_month, get_month_start_dates, get_last_day_of_the_month
+from crm.util import (calculate_work_hours_in_month, get_first_day_of_the_month, get_month_start_dates,
+                      get_last_day_of_the_month)
 from resources.models import Resource
 
 logger = getLogger(__name__)
@@ -54,8 +55,8 @@ class Commitment(models.Model):
                 start_day = max(self.start, get_first_day_of_the_month(month))
                 end_day = min(get_last_day_of_the_month(month), self.end)
 
-                if self.hours > calculate_work_hours(year=month.year, month=month.month,
-                                                     start_day=start_day, end_day=end_day):
+                if self.hours > calculate_work_hours_in_month(year=month.year, month=month.month,
+                                                              start_day=start_day, end_day=end_day):
                     msg = '{} hrs exceeds working hours for the month of {}/{}'
                     raise ValueError(msg.format(self.hours, month.month, month.year))
 
@@ -86,19 +87,20 @@ class Commitment(models.Model):
             month = get_first_day_of_the_month(start)
             end_day = self.end.day if self.end < end else end.day
             if use_percentage:
-                return {month: calculate_work_hours(year=start.year,
-                                                    month=start.month,
-                                                    start_day=start_day,
-                                                    end_day=end_day) * 0.01 * float(self.percentage)}
+                return {month: calculate_work_hours_in_month(year=start.year,
+                                                             month=start.month,
+                                                             start_day=start_day,
+                                                             end_day=end_day) * 0.01 * float(self.percentage)}
             else:
                 return {month: self.hours}
 
         result = {}
         for month in get_month_start_dates(start=start, end=end):
-            hours = calculate_work_hours(year=month.year,
-                                         month=month.month,
-                                         start_day=month.day,
-                                         end_day=self.end.day if self.end < get_last_day_of_the_month(month) else 31)
+            hours = calculate_work_hours_in_month(year=month.year,
+                                                  month=month.month,
+                                                  start_day=month.day,
+                                                  end_day=self.end.day if self.end < get_last_day_of_the_month(month)
+                                                          else 31)
             if month.day > 1:
                 month = get_first_day_of_the_month(month)
             if use_percentage:

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import division, unicode_literals
 
 from collections import defaultdict
 from django.db import models
 from django.contrib.auth.models import User, Group
 from django.utils.encoding import python_2_unicode_compatible
-from crm.util import get_last_day_of_the_month, calculate_work_hours
+from crm.util import get_last_day_of_the_month, calculate_work_hours_in_month
 
 
 @python_2_unicode_compatible
@@ -70,11 +70,11 @@ class Resource(models.Model):
 
     @property
     def coverage(self):
-        return {month: (hours / calculate_work_hours(year=month.year, month=month.month))
+        return {month: (hours / calculate_work_hours_in_month(year=month.year, month=month.month))
                 for month, hours in self.committed_hours.items()}
 
     def coverage_in_period(self, start, end=None):
-        return {month: (hours / calculate_work_hours(year=month.year, month=month.month))
+        return {month: (hours / calculate_work_hours_in_month(year=month.year, month=month.month))
                 for month, hours in self.committed_hours_in_period(start=start, end=end).items()}
 
     def enjoyment(self, year=None, month=None):

@@ -1,3 +1,4 @@
+from __future__ import division, unicode_literals
 from calendar import Calendar, monthrange
 from datetime import date, datetime
 from dateutil.parser import parse as parse_date
@@ -7,7 +8,7 @@ _calendar = Calendar()
 
 
 __all__ = ('get_first_day_of_the_month', 'get_month_start_time', 'get_month_start_dates',
-           'get_last_day_of_the_month', 'get_month_end_time', 'calculate_work_hours')
+           'get_last_day_of_the_month', 'get_month_end_time', 'calculate_work_hours_in_month')
 
 
 def get_first_day_of_the_month(month=None, year=None):
@@ -45,8 +46,8 @@ def get_last_day_of_the_month(*args, **kwargs):
     return date(year=month.year, month=month.month, day=monthrange(month.year, month.month)[1])
 
 
-def calculate_work_hours(year, month, start_day=1, end_day=31,
-                         work_hrs_per_day=8, workweek_starts=0, workweek_ends=4):
+def calculate_work_hours_in_month(year, month, start_day=1, end_day=31,
+                                  work_hrs_per_day=8, workweek_starts=0, workweek_ends=4):
 
     start_day = getattr(start_day, 'day', start_day)
     end_day = getattr(end_day, 'day', end_day)
@@ -56,10 +57,14 @@ def calculate_work_hours(year, month, start_day=1, end_day=31,
     work_hours = 0
     for week in _calendar.monthdayscalendar(year, month):
         for i, day in enumerate(week):
-            if all((day >= start_day,
-                    day <= end_day,
-                    i >= workweek_starts,
-                    i <= workweek_ends)):
+            if day < start_day or day > end_day:
+                continue
+            if (all((workweek_ends > workweek_starts,
+                     i >= workweek_starts,
+                     i <= workweek_ends)) or
+                (workweek_ends < workweek_starts and
+                (i >= workweek_starts or
+                 i <= workweek_ends))):
                 work_hours += work_hrs_per_day
     return work_hours
 
