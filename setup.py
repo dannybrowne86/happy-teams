@@ -11,7 +11,7 @@ setup(
     author_email='browne.danielc@gmail.com',
     url='https://github.com/dannybrowne86/happy-teams',
     packages=find_packages(),
-    license='TBD',
+    license='MIT',
     platforms='any',
     classifiers=[
         'Development Status :: 1 - Planning',
