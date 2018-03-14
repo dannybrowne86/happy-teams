@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -122,3 +125,19 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+# Fixture Data Settings
+FIXTURE_SUPER_USERNAME = 'admin'
+FIXTURE_SUPER_PASSWORD = 'admin'
+DEFAULT_USER_PASSWORD = 'n3w_p@55w0rd_c#@ng3_i7_n0w!'
+DEFAULT_EMAIL_DOMAIN = 'gtri.gatech.edu'
+MAIN_UNIT = 'GTRI'
+
+FIXTURE_DATA_WORKBOOK = r'U:\ser_div\admin\Rates\Employee Rate Information by Organization - 2017-04-04.xlsx'
+FIXTURE_DATA_WORKSHEET = 'Gov'
+
+try:
+    from .local_settings import *
+except ImportError:
+    logger.debug("Could not import local settings from 'happyteams/local_settings.py'")

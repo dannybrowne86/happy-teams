@@ -1,0 +1,25 @@
+language: python
+python:
+  - 2.7.8
+  - 2.7
+  - pypy
+  - 3.4
+  - 3.5
+  - 3.6
+  - nightly
+cache: pip
+env:
+  - DJANGO_VERSION=1.8.18
+  - DJANGO_VERSION=1.10.7
+  - DJANGO_VERSION=1.11.1
+# commands to install dependencies
+install:
+  - pip install --upgrade pip coverage
+  - python setup.py -q install
+  - pip install -q Django==$DJANGO_VERSION
+# commands to run tests
+script:
+  - python happyteams/manage.py makemigrations crm planning resources
+  - python happyteams/manage.py migrate
+  - coverage run --source='.' happyteams/manage.py test planning resources
+  - coverage report -m
